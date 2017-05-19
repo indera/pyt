@@ -4,6 +4,8 @@ from collections import namedtuple
 from .ast_helper import Arguments, get_call_names_as_string
 from .label_visitor import LabelVisitor
 from .right_hand_side_visitor import RHSVisitor
+from pyt.utils.log import enable_logger, logger
+enable_logger(to_file='./pyt.log')
 
 
 ControlFlowNode = namedtuple('ControlFlowNode',
@@ -511,6 +513,9 @@ class Visitor(ast.NodeVisitor):
         rhs_visitor.visit(ast_node.value)
 
         call = self.visit(ast_node.value)
+        logger.debug("call is %s", call)
+        logger.debug("type(call) is %s", type(call))
+        raise
 
         call_label = ''
         call_assignment = None
@@ -585,8 +590,6 @@ class Visitor(ast.NodeVisitor):
         target = target_label.visit(node.target)
 
         for_node = self.append_node(Node("for " + target_label.result + " in " + iterator_label.result + ':', node, line_number=node.lineno, path=self.filenames[-1]))
-
-
 
         if isinstance(node.iter, ast.Call) and get_call_names_as_string(node.iter.func)  in self.function_names:
             last_node = self.visit(node.iter)

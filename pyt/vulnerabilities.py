@@ -12,7 +12,8 @@ from .vulnerability_log import (
     Vulnerability,
     VulnerabilityLog
 )
-
+from pyt.utils.log import enable_logger, logger
+enable_logger(to_file='./pyt.log')
 
 Sanitiser = namedtuple('Sanitiser', 'trigger_word cfg_node')
 Triggers = namedtuple('Triggers', 'sources sinks sanitiser_dict')
@@ -33,6 +34,17 @@ class TriggerNode():
             elif not self.secondary_nodes:
                 self.secondary_nodes = [cfg_node]
 
+    def __repr__(self):
+        output = 'TriggerNode('
+
+        if self.trigger_word:
+            output = output + 'trigger_word is ' + str(self.trigger_word) + ', '
+
+        return (
+            output +
+            'sanitisers are ' + str(self.sanitisers) + ', '
+            'cfg_node is ' + str(self.cfg_node) + ')\n'
+        )
 
 def identify_triggers(cfg, sources, sinks):
     """Identify sources, sinks and sanitisers in a CFG.
@@ -192,9 +204,17 @@ def is_sanitized(sink, sanitiser_dict, lattice):
     Returns:
         True or False
     """
+    logger.debug("type(sink) is %s", type(sink))
+    logger.debug("sink is %s", sink)
+    logger.debug("sink.sanitisers is %s", sink.sanitisers)
+    logger.debug("sanitiser_dict is %s", sanitiser_dict)
     for sanitiser in sink.sanitisers:
         for cfg_node in sanitiser_dict[sanitiser]:
             if lattice.in_constraint(cfg_node, sink.cfg_node):
+                logger.debug("IMPORTANT, cfg_node is %s", cfg_node)
+                logger.debug("IMPORTANT, sink.cfg_node is %s", sink.cfg_node)
+                logger.debug("IMPORTANT, type(cfg_node) is %s", type(cfg_node))
+                logger.debug("IMPORTANT, type(sink.cfg_node) is %s", type(sink.cfg_node))
                 return True
     return False
 
@@ -244,8 +264,13 @@ def get_vulnerability(source, sink, triggers, lattice):
     if trigger_node_in_sink and lhs_in_sink_args:
         source_trigger_word = source.trigger_word
         sink_trigger_word = sink.trigger_word
+        logger.debug("type(sink) is %s", type(sink))
+        # logger.debug("sink is %s", sink)
+        logger.debug("triggers.sanitiser_dict is %s", triggers.sanitiser_dict)
+        logger.debug("lattice is %s", lattice)
         sink_is_sanitised = is_sanitized(sink, triggers.sanitiser_dict,
                                          lattice)
+        logger.debug("sink_is_sanitised is %s", sink_is_sanitised)
 
         if sink_is_sanitised:
             return SanitisedVulnerability(source.cfg_node, source_trigger_word,
